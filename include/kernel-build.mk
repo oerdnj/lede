@@ -153,7 +153,7 @@ define BuildKernel
 
   download: $(if $(LINUX_SITE),$(DL_DIR)/$(LINUX_SOURCE))
   prepare: $(STAMP_CONFIGURED)
-  compile: $(LINUX_DIR)/.modules
+  compile: $(LINUX_DIR)/.modules $(LINUX_DIR)/.image
 	$(MAKE) -C image compile TARGET_BUILD=
 
   oldconfig menuconfig nconfig: $(STAMP_PREPARED) $(STAMP_CHECKED) FORCE
@@ -163,8 +163,8 @@ define BuildKernel
 	$(_SINGLE)$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) HOST_LOADLIBES="-L$(STAGING_DIR_HOST)/lib -lncurses" $$@
 	$(LINUX_RECONF_DIFF) $(LINUX_DIR)/.config > $(LINUX_RECONFIG_TARGET)
 
-  install: $(LINUX_DIR)/.image
-	+$(MAKE) -C image compile install TARGET_BUILD=
+  install: compile
+	+$(MAKE) -C image install TARGET_BUILD=
 
   clean: FORCE
 	rm -rf $(KERNEL_BUILD_DIR)
