@@ -22,8 +22,8 @@ ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmwar
 endif
 
 tools-$(BUILD_TOOLCHAIN) += gmp mpfr mpc libelf expat
-tools-y += m4 libtool autoconf automake flex bison pkg-config mklibs
-tools-y += sstrip make-ext4fs e2fsprogs mtd-utils mkimage
+tools-y += m4 libtool autoconf automake flex bison pkg-config mklibs zlib lzo
+tools-y += sstrip make-ext4fs e2fsprogs mtd-utils mkimage util-linux btrfs-progs
 tools-y += firmware-utils patch-image quilt padjffs2
 tools-y += mm-macros missing-macros cmake scons bc findutils gengetopt patchelf
 tools-y += mtools dosfstools libressl
@@ -72,6 +72,8 @@ $(curdir)/libressl/compile := $(curdir)/pkg-config/install
 $(curdir)/mkimage/compile += $(curdir)/libressl/install
 $(curdir)/firmware-utils/compile += $(curdir)/libressl/install
 $(curdir)/cmake/compile += $(curdir)/libressl/install
+$(curdir)/util-linux/compile := $(curdir)/libtool/install
+$(curdir)/btrfs-progs/compile := $(curdir)/util-linux/install $(curdir)/lzo/install $(curdir)/zlib/install
 
 ifneq ($(HOST_OS),Linux)
   tools-y += coreutils
