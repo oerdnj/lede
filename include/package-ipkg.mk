@@ -217,7 +217,7 @@ $(_endef)
 			echo "#!/bin/sh"; \
 			echo "[ -x "\$$$${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0"; \
 			echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
-			echo "default_prerm \$$$$0 \$$$$@"; \
+			echo "( type default_prerm > /dev/null ) && default_prerm \$$$$0 \$$$$@ || true"; \
 		) > prerm; \
 		chmod 0755 postinst prerm; \
 		$($(1)_COMMANDS) \
