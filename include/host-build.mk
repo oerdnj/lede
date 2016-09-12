@@ -126,7 +126,7 @@ define Host/Exports/Default
   $(1) : export STAGING_PREFIX=$$(HOST_BUILD_PREFIX)
   $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig:$$(HOST_BUILD_PREFIX)/lib/pkgconfig
   $(1) : export PKG_CONFIG_LIBDIR=$$(HOST_BUILD_PREFIX)/lib/pkgconfig
-  $(1) : export CCACHE_DIR:=$(STAGING_DIR_HOST)/ccache
+  $(1) : export CCACHE_DIR:=$(if $(CCACHE_HOST_DIR),$(CCACHE_HOST_DIR),$(STAGING_DIR_HOST)/ccache)
   $(if $(IS_PACKAGE_BUILD),$(1) : export PATH=$$(TARGET_PATH_PKG))
 endef
 Host/Exports=$(Host/Exports/Default)
