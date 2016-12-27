@@ -163,12 +163,8 @@ define KernelPackage
     CATEGORY:=Kernel modules
     DESCRIPTION:=$(DESCRIPTION)
     EXTRA_DEPENDS:=kernel (=$(LINUX_VERSION)-$(LINUX_RELEASE)-$(LINUX_VERMAGIC))
-<<<<<<< HEAD
-    VERSION:=$(LINUX_VERSION)$(if $(PKG_VERSION),+$(PKG_VERSION))-$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
+    VERSION:=$(LINUX_VERSION)$(if $(PKG_VERSION),+$(PKG_VERSION))-$(if $(PKG_RELEASE),$(PKG_RELEASE)-$(LINUX_VERMAGIC),$(LINUX_RELEASE)-$(LINUX_VERMAGIC))
     PKGFLAGS:=$(PKGFLAGS)
-=======
-    VERSION:=$(LINUX_VERSION)$(if $(PKG_VERSION),+$(PKG_VERSION))-$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE)-$(LINUX_VERMAGIC))
->>>>>>> a66d6d0b4e... include/kernel.mk: Add kernels PKG_VERSION to LINUX_VERMAGIC. Append LINUX_VERMAGIC to all kmods version.
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(BOARD))
     $(call KernelPackage/$(1)/$(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic))
