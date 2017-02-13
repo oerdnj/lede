@@ -1,0 +1,221 @@
+From f70d27f8fc0f34d3fb974efe49f8b6689ae35e7e Mon Sep 17 00:00:00 2001
+From: Michal Hrusecky <Michal@Hrusecky.net>
+Date: Sun, 16 Oct 2016 13:20:34 +0200
+Subject: [PATCH] LXC customizations
+
+---
+ utils/lxc/Makefile                         | 22 +++++++++++++-
+ utils/lxc/patches/030-lxc-download.patch   | 47 +++++++++---------------------
+ utils/lxc/patches/040-better-default.patch | 14 +++++++++
+ utils/lxc/patches/050-tx-off.patch         | 34 +++++++++++++++++++++
+ 4 files changed, 82 insertions(+), 35 deletions(-)
+ create mode 100644 utils/lxc/patches/040-better-default.patch
+ create mode 100644 utils/lxc/patches/050-tx-off.patch
+
+diff --git a/utils/lxc/Makefile b/utils/lxc/Makefile
+index 0df1460..b859ca7 100644
+--- a/utils/lxc/Makefile
++++ b/utils/lxc/Makefile
+@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
+ 
+ PKG_NAME:=lxc
+ PKG_VERSION:=1.1.5
+-PKG_RELEASE:=3
++PKG_RELEASE:=9
+ 
+ PKG_LICENSE:=LGPL-2.1+ BSD-2-Clause GPL-2.0
+ PKG_MAINTAINER:=Luka Perkov <luka@openwrt.org>
+@@ -265,6 +265,27 @@ define GenPlugin
+   $$(eval $$(call BuildPackage,lxc-$(1)))
+ endef
+ 
++define Package/lxc-auto/postinst
++#!/bin/sh
++[ -n "$$IPKG_INSTROOT" ] || {
++	/etc/init.d/lxc-auto enable
++}
++endef
++
++define Package/lxc-common/postinst
++#!/bin/sh
++[ -n "$$IPKG_INSTROOT" ] || {
++	if cd /lxc 2> /dev/null; then
++		for i in *; do
++			if [ -d "$$i" ] && [ \! -e "/srv/lxc/$$i" ]; then
++				ln -s "../../lxc/$$i" "/srv/lxc/$$i"
++			fi
++		done
++	fi
++	sed -i 's|api.turris.cz|repo.turris.cz|' /etc/config/lxc
++}
++endef
++
+ 
+ $(eval $(call BuildPackage,lxc))
+ $(eval $(call BuildPackage,lxc-common))
+diff --git a/utils/lxc/patches/030-lxc-download.patch b/utils/lxc/patches/030-lxc-download.patch
+index 295bae0..c628f24 100644
+--- a/utils/lxc/patches/030-lxc-download.patch
++++ b/utils/lxc/patches/030-lxc-download.patch
+@@ -1,43 +1,22 @@
+ --- a/templates/lxc-download.in
+ +++ b/templates/lxc-download.in
+-@@ -39,7 +39,7 @@ DOWNLOAD_LIST_IMAGES="false"
++@@ -30,16 +30,16 @@ DOWNLOAD_ARCH=
++ DOWNLOAD_BUILD=
++ DOWNLOAD_COMPAT_LEVEL=2
++ DOWNLOAD_DIST=
++-DOWNLOAD_FLUSH_CACHE="false"
+++DOWNLOAD_FLUSH_CACHE="true"
++ DOWNLOAD_FORCE_CACHE="false"
++ DOWNLOAD_INTERACTIVE="false"
++-DOWNLOAD_KEYID="0xBAEFF88C22F6E216"
+++DOWNLOAD_KEYID="0x96542441B2EF343B"
++ DOWNLOAD_KEYSERVER="hkp://pool.sks-keyservers.net"
++ DOWNLOAD_LIST_IMAGES="false"
+  DOWNLOAD_MODE="system"
+  DOWNLOAD_READY_GPG="false"
+  DOWNLOAD_RELEASE=
+ -DOWNLOAD_SERVER="images.linuxcontainers.org"
+-+DOWNLOAD_SERVER="virtualwrt.org/containers/"
+++DOWNLOAD_SERVER="`uci get lxc.lxc.url 2> /dev/null || echo repo.turris.cz/lxc`"
+  DOWNLOAD_SHOW_GPG_WARNING="true"
+  DOWNLOAD_SHOW_HTTP_WARNING="true"
+  DOWNLOAD_TARGET="system"
+-@@ -257,14 +257,6 @@ for bin in tar xz wget; do
+-     fi
+- done
+- 
+--# Check for GPG
+--if [ "$DOWNLOAD_VALIDATE" = "true" ]; then
+--    if ! type gpg >/dev/null 2>&1; then
+--        echo "ERROR: Missing recommended tool: gpg" 1>&2
+--        echo "You can workaround this by using --no-validate." 1>&2
+--        exit 1
+--    fi
+--fi
+- 
+- # Check that we have all variables we need
+- if [ -z "$LXC_NAME" ] || [ -z "$LXC_PATH" ] || [ -z "$LXC_ROOTFS" ]; then
+-@@ -456,16 +448,9 @@ if [ "$DOWNLOAD_USE_CACHE" = "false" ];
+-         echo "Downloading the rootfs"
+-         download_file $DOWNLOAD_URL/rootfs.tar.xz \
+-             ${DOWNLOAD_TEMP}/rootfs.tar.xz normal
+--        download_sig  $DOWNLOAD_URL/rootfs.tar.xz.asc \
+--             ${DOWNLOAD_TEMP}/rootfs.tar.xz.asc normal
+--        gpg_validate ${DOWNLOAD_TEMP}/rootfs.tar.xz.asc
+--
+-         echo "Downloading the metadata"
+-         download_file $DOWNLOAD_URL/meta.tar.xz \
+-             ${DOWNLOAD_TEMP}/meta.tar.xz normal
+--        download_sig  $DOWNLOAD_URL/meta.tar.xz.asc \
+--            ${DOWNLOAD_TEMP}/meta.tar.xz.asc normal
+--        gpg_validate ${DOWNLOAD_TEMP}/meta.tar.xz.asc
+- 
+-         if [ -d $LXC_CACHE_PATH ]; then
+-             rm -Rf $LXC_CACHE_PATH
+diff --git a/utils/luci-app-lxc/files/lxc.config b/utils/luci-app-lxc/files/lxc.config
+index 5572c73..b0e90f7 100644
+--- a/utils/luci-app-lxc/files/lxc.config
++++ b/utils/luci-app-lxc/files/lxc.config
+@@ -3,4 +3,4 @@
+ #
+ 
+ config lxc 'lxc'
+-	option url 'virtualwrt.org/containers/'
++	option url 'repo.turris.cz/lxc'
+diff --git a/utils/luci-app-lxc/Makefile b/utils/luci-app-lxc/Makefile
+index 210f030..b1d16a4 100644
+--- a/utils/luci-app-lxc/Makefile
++++ b/utils/luci-app-lxc/Makefile
+@@ -21,7 +21,7 @@ define Package/luci-app-lxc
+   CATEGORY:=LuCI
+   SUBMENU:=3. Applications
+   TITLE:=LXC management Web UI
+-  DEPENDS:=+luci-mod-admin-full +lxc +lxc-create +liblxc +rpcd-mod-lxc
++  DEPENDS:=+luci-mod-admin-full +lxc +lxc-create +liblxc +rpcd-mod-lxc +getopt +xz +gnupg +gnupg-utils +ethtool
+   MAINTAINER:=Petar Koretic <petar.koretic@sartura.hr>
+ endef
+ 
+diff --git a/utils/lxc/patches/040-better-default.patch b/utils/lxc/patches/040-better-default.patch
+new file mode 100644
+index 0000000..b2bedb3
+--- /dev/null
++++ b/utils/lxc/patches/040-better-default.patch
+@@ -0,0 +1,16 @@
++Index: lxc-1.1.5/config/etc/default.conf.unknown
++===================================================================
++--- lxc-1.1.5.orig/config/etc/default.conf.unknown
+++++ lxc-1.1.5/config/etc/default.conf.unknown
++@@ -1 +1,10 @@
++-lxc.network.type = empty
+++lxc.network.type = veth
+++lxc.network.link = br-lan
+++lxc.network.flags = up
+++lxc.network.name = eth0
+++# Debian workaround
+++lxc.network.script.up = /usr/share/lxc/hooks/tx-off
+++lxc.tty = 4
+++lxc.pts = 1024
+++# Template to generate fixed MAC address
+++lxc.network.hwaddr = x2:xx:xx:xx:xx:xx
+diff --git a/utils/lxc/patches/050-tx-off.patch b/utils/lxc/patches/050-tx-off.patch
+new file mode 100644
+index 0000000..62d15e8
+--- /dev/null
++++ b/utils/lxc/patches/050-tx-off.patch
+@@ -0,0 +1,34 @@
++Index: lxc-1.1.5/hooks/Makefile.am
++===================================================================
++--- lxc-1.1.5.orig/hooks/Makefile.am
+++++ lxc-1.1.5/hooks/Makefile.am
++@@ -4,6 +4,7 @@ hooks_SCRIPTS = \
++ 	clonehostname \
++ 	mountecryptfsroot \
++ 	ubuntu-cloud-prep \
++-	squid-deb-proxy-client
+++	squid-deb-proxy-client \
+++	tx-off
++ 
++ EXTRA_DIST=$(hooks_SCRIPTS)
++Index: lxc-1.1.5/hooks/Makefile.in
++===================================================================
++--- lxc-1.1.5.orig/hooks/Makefile.in
+++++ lxc-1.1.5/hooks/Makefile.in
++@@ -307,7 +307,8 @@ hooks_SCRIPTS = \
++ 	clonehostname \
++ 	mountecryptfsroot \
++ 	ubuntu-cloud-prep \
++-	squid-deb-proxy-client
+++	squid-deb-proxy-client \
+++	tx-off
++ 
++ EXTRA_DIST = $(hooks_SCRIPTS)
++ all: all-am
++Index: lxc-1.1.5/hooks/tx-off
++===================================================================
++--- /dev/null
+++++ lxc-1.1.5/hooks/tx-off
++@@ -0,0 +1,2 @@
+++#!/bin/sh
+++[ -z "$5" ] || ethtool -K "$5" tx off
+diff --git a/utils/lxc/files/lxc-auto.config b/utils/lxc/files/lxc-auto.config
+index 5572c73..b0e90f7 100644
+--- a/utils/lxc/files/lxc-auto.config	2016-11-18 11:16:17.152468041 +0100
++++ b/utils/lxc/files/lxc-auto.config	2016-11-18 11:36:50.829639903 +0100
+@@ -1,5 +1,12 @@
+ #config container
+ 	#option name container1
+-	#option timeout 300
++	# How long to give container to shutdown gracefully before killing it
++	# Default 300s
++	#option timeout 30
++	# Commnads to run before starting container
+ 	#list command '/bin/command --option'
+ 
++#config container
++	#option name container2
++	#option timeout 60
++
+-- 
+2.10.1

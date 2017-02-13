@@ -1,0 +1,70 @@
+From bc666dd765b81ee7bcd62f674c1acd33ca9e3922 Mon Sep 17 00:00:00 2001
+From: Michal Hrusecky <michal.hrusecky@nic.cz>
+Date: Fri, 30 Sep 2016 14:35:58 +0200
+Subject: [PATCH] https-dns-proxy: Fix build
+
+---
+ net/https-dns-proxy/Makefile                    |  2 ++
+ net/https-dns-proxy/patches/010-no-u_char.patch | 11 +++++++++++
+ 2 files changed, 13 insertions(+)
+ create mode 100644 net/https-dns-proxy/patches/010-no-u_char.patch
+
+diff --git a/net/https-dns-proxy/Makefile b/net/https-dns-proxy/Makefile
+index 62bc86e..4ad69ca 100644
+--- a/net/https-dns-proxy/Makefile
++++ b/net/https-dns-proxy/Makefile
+@@ -15,6 +15,8 @@ PKG_LICENSE:=MIT
+ include $(INCLUDE_DIR)/package.mk
+ include $(INCLUDE_DIR)/cmake.mk
+ 
++TARGET_CFLAGS += -std=c99
++
+ define Package/https_dns_proxy
+   SECTION:=net
+   CATEGORY:=Network
+diff --git a/net/https-dns-proxy/patches/010-no-u_char.patch b/net/https-dns-proxy/patches/010-no-u_char.patch
+new file mode 100644
+index 0000000..b185a6d
+--- /dev/null
++++ b/net/https-dns-proxy/patches/010-no-u_char.patch
+@@ -0,0 +1,21 @@
++@@ -1,5 +1,9 @@
++ #include <sys/types.h>
++
+++typedef __u_char u_char;
+++typedef __u_long u_long;
+++typedef __u_int u_int;
+++
++ #include <arpa/inet.h>
++ #include <arpa/nameser.h>
++ #include <errno.h>
++--- a/src/json_to_dns.c
+++++ b/src/json_to_dns.c
++@@ -211,7 +215,7 @@ int json_to_rdata(uint16_t type, char *d
++       int l = e - s;
++       if (l > 255)
++         l = 255;
++-      *(u_char *)(pos++) = l;
+++      *(uint8_t *)(pos++) = l;
++       memcpy(pos, s, l);
++       s += l;
++       pos += l;
+diff --git a/net/https-dns-proxy/patches/020-more-includes.patch b/net/https-dns-proxy/patches/020-more-includes.patch
+new file mode 100644
+index 0000000..b185a6d
+--- /dev/null
++++ b/net/https-dns-proxy/patches/020-more-includes.patch
+@@ -0,0 +1,10 @@
++--- a/src/options.c
+++++ b/src/options.c
++@@ -9,6 +9,7 @@
++ #include <stdlib.h>
++ #include <string.h>
++ #include <unistd.h>
+++#include <getopt.h>
++ 
++ #include "logging.h"
++ #include "options.h"
+-- 
+2.10.0
+
