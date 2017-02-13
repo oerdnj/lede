@@ -200,6 +200,9 @@ $(_endef)
 	$(CheckDependencies)
 
 	$(RSTRIP) $$(IDIR_$(1))
+	(cd $$(IDIR_$(1)); \
+		find . -type f \! -path ./CONTROL/\* -exec mkhash sha256 \{\} \; 2> /dev/null | \
+		sed 's|\([[:blank:]]\)\./|\1/|' > $$(IDIR_$(1))/CONTROL/files-sha256sum ) || true
 	(cd $$(IDIR_$(1))/CONTROL; \
 		( \
 			echo "$$$$CONTROL"; \
