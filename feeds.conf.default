@@ -1,4 +1,9 @@
+src-git turrispackages https://gitlab.labs.nic.cz/turris/turris-os-packages.git^2a9c8ed60db1ad4682a5fb123b3efee49b73cf9f
+src-git lucics https://gitlab.labs.nic.cz/turris/luci-cs.git^7d1985286660e6db4b662c9f5c4cdadf985a3d69
 src-git packages https://git.lede-project.org/feed/packages.git;lede-17.01
 src-git luci https://git.lede-project.org/project/luci.git;lede-17.01
 src-git routing https://git.lede-project.org/feed/routing.git;lede-17.01
 src-git telephony https://git.lede-project.org/feed/telephony.git;lede-17.01
+src-git management https://github.com/openwrt-management/packages.git^9640382381e011cdfdeab74812f8ffd0fe17ca17
+src-git printing https://github.com/miska/openwrt-printing-packages.git^9c305e35dcf4c620c01ad426c61d9c720dbd91ed
+src-git openwisp openwisp https://github.com/openwisp/openwisp-config.git^efa19f0a273d0b6e1bc2e96418e893e82a3c9d29
