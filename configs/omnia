@@ -1,0 +1,78 @@
+CONFIG_TARGET_mvebu=y
+CONFIG_TARGET_mvebu_Turris-Omnia=y
+# CONFIG_TARGET_BOARD="mvebu"
+# CONFIG_TARGET_ARCH_PACKAGES="mvebu"
+CONFIG_TARGET_ROOTFS_EXT4FS=y
+CONFIG_TARGET_ROOTFS_TARGZ=y
+CONFIG_TARGET_ROOTFS_PARTSIZE=64
+CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL=y
+CONFIG_TARGET_ROOTFS_INCLUDE_DTB=y
+CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE=y
+CONFIG_TARGET_OPTIMIZATION="-O2 -pipe -march=armv7-a -mtune=cortex-a9 -mfpu=vfpv3-d16"
+CONFIG_SOFT_FLOAT=n
+CONFIG_TARGET_ROOTFS_PARTSIZE=256
+CONFIG_TARGET_EXT4_MAXINODE=12000
+CONFIG_BLOCK_MOUNT_MMC_IS_MTD=y
+
+# Use musl for Omnia
+CONFIG_LIBC_USE_MUSL=y
+CONFIG_USE_MUSL=y
+CONFIG_MUSL_VERSION="1.1.11"
+CONFIG_OPENSSL_WITH_EC=y
+CONFIG_OPENSSL_WITH_EC2M=y
+CONFIG_OPENSSL_ENGINE_CRYPTO=y
+CONFIG_OPENSSL_ENGINE_DIGEST=y
+
+# Important packages
+CONFIG_PACKAGE_updater-ng=y
+CONFIG_PACKAGE_kmod-wdt-orion=y
+CONFIG_PACKAGE_ath10k-firmware-qca988x-ct=m
+CONFIG_PACKAGE_ath10k-firmware-qca9884-ct=m
+CONFIG_PACKAGE_kmod-ath10k-ct=m
+CONFIG_PACKAGE_kmod-ath10k=y
+CONFIG_PACKAGE_ath10k-firmware-qca988x=y
+CONFIG_PACKAGE_kmod-switch-mvsw61xx=y
+
+# Packages that used to be built as modules all the time
+CONFIG_PACKAGE_daemon-watchdog=y
+CONFIG_PACKAGE_watchdog_adjust=y
+CONFIG_PACKAGE_openssh-server=y
+CONFIG_PACKAGE_ca-certificates=y
+CONFIG_PACKAGE_conntrack-tools=y
+CONFIG_PACKAGE_ebtables=y
+CONFIG_PACKAGE_openssh-client-utils=y
+CONFIG_PACKAGE_openssh-client=y
+CONFIG_PACKAGE_openssh-moduli=y
+CONFIG_PACKAGE_openssh-sftp-server=y
+CONFIG_PACKAGE_openssh-sftp-client=y
+CONFIG_PACKAGE_bash=y
+CONFIG_PACKAGE_vim-full=y
+CONFIG_PACKAGE_psmisc=y
+CONFIG_PACKAGE_htop=y
+CONFIG_PACKAGE_logrotate=y
+CONFIG_PACKAGE_https-cert=y
+CONFIG_PACKAGE_userlists=y
+
+# LEDs
+CONFIG_PACKAGE_kmod-ledtrig-default-on=y
+CONFIG_PACKAGE_kmod-ledtrig-gpio=y
+CONFIG_PACKAGE_kmod-ledtrig-heartbeat=y
+CONFIG_PACKAGE_kmod-ledtrig-morse=y
+CONFIG_PACKAGE_kmod-ledtrig-netdev=y
+CONFIG_PACKAGE_kmod-ledtrig-netfilter=y
+CONFIG_PACKAGE_kmod-ledtrig-oneshot=y
+CONFIG_PACKAGE_kmod-ledtrig-timer=y
+CONFIG_PACKAGE_kmod-ledtrig-transient=y
+CONFIG_PACKAGE_kmod-ledtrig-usbdev=y
+
+# knot-resolver stuff
+CONFIG_PACKAGE_libuv=y
+CONFIG_PACKAGE_knot-resolver=y
+CONFIG_PACKAGE_libnettle=y
+CONFIG_PACKAGE_libgmp=y
+CONFIG_PACKAGE_jansson=y
+CONFIG_PACKAGE_knot-libdnssec=y
+CONFIG_PACKAGE_knot-libknot=y
+CONFIG_PACKAGE_knot-libzscanner=y
+CONFIG_PACKAGE_luajit=y
+CONFIG_PACKAGE_libgnutls=y
