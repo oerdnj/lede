@@ -1,0 +1,59 @@
+#!/bin/bash -xe
+
+make_defconfig() {
+	make defconfig
+	egrep '^(#[[:space:]]+)?CONFIG_KERNEL' configs/common configs/$TARGET_BOARD | sed 's|.*:||'  >> ./.config
+}
+
+if [ "$1" = turris ] || [ "$1" = omnia ]; then
+	export TARGET_BOARD="$1"
+	shift
+fi
+
+if [ -z "$TARGET_BOARD" ]; then
+	echo "You have to specify target board - options are 'turris' or 'omnia'"
+	exit 1
+fi
+
+# Clean feeds
+./scripts/feeds clean
+
+# Install luci feed
+./scripts/feeds update -a
+# Patch feeds
+pushd patches
+for feed in *; do
+	pushd $feed
+	for patch in *; do
+		pushd ../../feeds/$feed
+		patch -p1 < ../../patches/$feed/$patch
+		popd
+	done
+	popd
+done
+popd
+./scripts/feeds install -a
+
+# Uninstall broken pkgs
+[ \! -f ./disabled_packages.common ]        || ./scripts/feeds uninstall $(echo $(cut -d '#' -f1 ./disabled_packages.common))
+[ \! -f ./disabled_packages.$TARGET_BOARD ] || ./scripts/feeds uninstall $(echo $(cut -d '#' -f1 ./disabled_packages.$TARGET_BOARD))
+
+# Build NAND FW
+cat configs/common configs/$TARGET_BOARD | sed -e "s|@BOARD@|$TARGET_BOARD|" -e "s|@BRANCH@||" > .config
+[ -n "$BUILD_ALL" ] && echo "CONFIG_ALL=y" >> .config && echo "CONFIG_SDK=y" >> .config
+[ -n "$USE_CCACHE" ] && echo "CONFIG_CCACHE=y" >> .config
+make_defconfig
+git log -n1 --format='%H' >files/etc/git-version
+git clone git@git.nic.cz:turris/misc-internal
+# If the revision is marked, it is propagation of deploy into current stable. In that case, we clean up. Otherwise, just try to recompile it as fast as possible, as it is just some small fix.
+if grep -qFf files/etc/git-version misc-internal/updater/deploy ; then
+	make dirclean
+fi
+rm -rf misc-internal
+make "$@"
+# Preserve the uncompressed image too
+cp -pr build_dir/target-powerpc_*/root-mpc85xx bin/mpc85xx/root
+pushd bin/mpc85xx/root
+rm -f var
+find -type l ! -exec test -r {} \; -delete
+popd

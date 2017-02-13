@@ -1,0 +1,316 @@
+#!/bin/bash -xe
+
+# Cleaning
+[ -d ./tmp ] && rm -rf ./tmp
+[ -d ./bin ] && rm -rf ./bin
+[ -d ./bin-nor ] && rm -rf ./bin-nor
+[ -d ./logs ] && rm -rf ./logs
+[ -d ./logs-nand ] && rm -rf ./logs-nand
+[ -d ./logs-nor ] && rm -rf ./logs-nor
+[ -d ./logs-initram ] && rm -rf ./logs-initram
+
+export TMPDIR="$PWD/tmp"
+mkdir $TMPDIR
+
+if [ "$1" = turris ] || [ "$1" = omnia ]; then
+    export TARGET_BOARD="$1"
+    shift
+else
+    echo "The first argument is empty or unknown!"
+    echo "You have to specify target board - options are 'turris' or 'omnia'"
+    exit 1
+fi
+
+make_defconfig() {
+	make defconfig "$@"
+	egrep '^(#[[:space:]]+)?CONFIG_KERNEL' configs/common configs/$TARGET_BOARD | sed 's|.*:||' >> ./.config
+	if [ -n "${PKG_BRANCH}" ] && [ "${PKG_BRANCH}" \!= master ] && [ "${PKG_BRANCH}" \!= stable ] && [ "${PKG_BRANCH}" \!= stable-omnia ]; then
+		echo CONFIG_PACKAGE_cznic-repo-keys-test=y >> .config
+		echo CONFIG_PACKAGE_getbranch-test=y >> .config
+	else
+		echo CONFIG_PACKAGE_cznic-repo-keys-test=m >> .config
+		echo CONFIG_PACKAGE_getbranch-deploy=y >> .config
+	fi
+}
+
+# Clean feeds
+./scripts/feeds clean
+./scripts/feeds update -a
+# Patch feeds
+pushd patches
+for feed in *; do
+	pushd $feed
+	for patch in *; do
+		pushd ../../feeds/$feed
+		patch -p1 < ../../patches/$feed/$patch
+		popd
+	done
+	popd
+done
+popd
+./scripts/feeds install -a
+
+# Uninstall broken pkgs
+./scripts/feeds uninstall \
+$([ \! -f ./disabled_packages.common ] || echo $(cut -d '#' -f1 ./disabled_packages.common)) \
+$([ \! -f ./disabled_packages.$TARGET_BOARD ] || echo $(cut -d '#' -f1 ./disabled_packages.$TARGET_BOARD))
+
+
+# Override packages release numbers
+scripts/override_release_numbers.sh
+
+# Build NAND FW
+[ -z "$OPENWRT_BRANCH"  ] || PKG_BRANCH="-$OPENWRT_BRANCH"
+[ -n "$REAL_PKG_BRANCH" ] || REAL_PKG_BRANCH="$PKG_BRANCH"
+cat configs/common configs/$TARGET_BOARD | sed -e "s|@BOARD@|$TARGET_BOARD|" -e "s|@BRANCH@|$PKG_BRANCH|" > .config
+[ -n "$BUILD_ALL" ] && echo "CONFIG_ALL=y" >> .config && echo "CONFIG_SDK=y" >> .config
+echo CONFIG_ALL_KMODS=y >> .config
+
+# Include important userlists
+# Base list generation
+cat > base.lua << EOF
+-- The basic repository
+Repository 'turris' 'https://api.turris.cz/openwrt-repo/${TARGET_BOARD}${REAL_PKG_BRANCH}/packages' {
+	subdirs = {'base', $(echo $(sed -n 's|^src-git[[:blank:]]\+\([^[:blank:]]*\)[[:blank:]]\+http.*|\1|p' ./feeds.conf.default) | sed -e 's|\([^[:blank:]]\+\)|'"'\\1'|g" -e 's|\ |,\ |g')}
+}
+EOF
+if [ -z "$BUILD_ALL" ]; then
+cat >> base.lua << EOF
+
+-- The fallback repository
+Repository 'turris-fallback' 'https://api.turris.cz/openwrt-repo/${TARGET_BOARD}-nightly/packages' {
+	subdirs = {'base', $(echo $(sed -n 's|^src-git[[:blank:]]\+\([^[:blank:]]*\)[[:blank:]]\+http.*|\1|p' ./feeds.conf.default) | sed -e 's|\([^[:blank:]]\+\)|'"'\\1'|g" -e 's|\ |,\ |g')},
+	priority = 40,
+	ignore = {'missing'}
+}
+EOF
+fi
+cat >> base.lua << EOF
+
+-- Make sure the updater is up to date before continuing
+Package 'opkg-trans' { replan = true }
+Install 'opkg-trans' 'updater-ng' { critical = true }
+Install 'userlists' { critical = true }
+
+-- Negative dependencies generated from file collisions
+EOF
+# Other lists
+echo 'config pkglists pkglists' > package/feeds/turrispackages/opkg-trans/files/updater.config
+for i in lists/*.list; do
+	[ "`basename ${i/.list}`" = base ] || echo "	list lists '`basename ${i/.list}`'" >> package/feeds/turrispackages/opkg-trans/files/updater.config
+	cat "$i" "${i/%list/${TARGET_BOARD}}" | sed 's|#.*||' 2> /dev/null | while read PKG; do
+		if expr "$PKG" : CONFIG_;then
+			if [ "$TARGET_BOARD" = omnia ]; then
+				echo "$PKG" | sed 's|=m|=y|' >> .config
+			else
+				echo "$PKG" >> .config
+			fi
+		elif [ -n "$PKG" ]; then
+			if [ "$TARGET_BOARD" = omnia ] || [ "$i" = lists/base.list ]; then
+				if [ "$BUILD_ALL" ] || [ "$i" = lists/base.list ]; then
+					echo "CONFIG_PACKAGE_$PKG=y" >> .config
+				fi
+			else
+				[ -z "$BUILD_ALL" ] || echo "CONFIG_PACKAGE_$PKG=m" >> .config
+			fi
+		fi
+	done
+done
+
+[ -n "$USE_CCACHE" ] && echo "CONFIG_CCACHE=y" >> .config
+
+
+if [ -f "$HOME"/mime.key ]; then
+	echo "CONFIG_SIGNED_PACKAGES=y" >> .config
+	rm -f key-build key-build.pub
+	cp "$HOME/mime.key" key-build
+	cp "$HOME/mime.pub" key-build.pub
+fi
+
+
+[ "${TARGET_BOARD}" = omnia ] || echo "CONFIG_PACKAGE_updater-ng=m" >> ./.config
+
+make_defconfig
+
+if [ -d .git ] ; then
+	git log -n1 --format='%H' >files/etc/git-version
+fi
+
+make clean
+
+[ -z "$BUILD_ALL" ] || make dirclean
+
+set -- "$@" PKG_BRANCH=${PKG_BRANCH/-/}
+
+[ -z "$PERSISTENT_CCACHE" ] || set -- "$@" CCACHE_DIR="`pwd`/ccache" CCACHE_HOST_DIR="`pwd`/ccache-host"
+
+make "$@"
+
+if [ -n "$PRIMARY_ONLY" ] ; then
+	# If we want only the primary system and want to use the build directory for more tests, exit now
+	exit
+fi
+
+# Nice junit export
+./scripts/generate_junit.sh
+
+if [ -n "`cat logs/package/error.txt 2> /dev/null`" ] && [ -z "$PKG_BRANCH" ]; then
+	echo "Following packages are failing in stable release"
+	cat logs/package/error.txt
+	exit 1
+fi
+
+[ \! -d ./logs ] || mv ./logs ./logs-nand
+
+COMMIT_DATE="`git log --format=format:%cD -1`"
+
+if [ "$TARGET_BOARD" = turris ]; then
+	#Build initramfs
+	echo -e "CONFIG_TARGET_ROOTFS_INITRAMFS=y\nCONFIG_TARGET_INITRAMFS_COMPRESSION_XZ=y" >> .config
+	make_defconfig
+	make target/linux/compile "$@"
+	[ \! -d ./logs ] || mv ./logs ./logs-initram
+
+	cp build_dir/target-powerpc_*/linux-mpc85xx_p2020-nand/zImage-initramfs bin/mpc85xx/turris-initramfs-zimage
+
+	# Preserve the uncompressed image too
+	mv build_dir/target-powerpc_*/root-mpc85xx bin/mpc85xx/root
+	cd bin/mpc85xx/root
+	rm var
+	find -type l ! -exec test -r {} \; -delete
+	cd ../../..
+elif [ "$TARGET_BOARD" = omnia ]; then
+	mkdir bin/mvebu-musl/medkit
+	MED_PATH="bin/mvebu-musl/medkit"
+	if [ -n "$BUILD_ALL" ]; then
+		FLAVOR="full"
+	else
+		FLAVOR="minimal"
+	fi
+	mkdir -p "$MED_PATH"
+	mv bin/mvebu-musl/openwrt-mvebu-Turris-Omnia-rootfs.tar.gz "$MED_PATH"/omnia-medkit-`date -d "$COMMIT_DATE" +%Y%m%d%H%M`-$FLAVOR.tar.gz
+	ln -s omnia-medkit-`date -d "$COMMIT_DATE" +%Y%m%d%H%M`-$FLAVOR.tar.gz "$MED_PATH"/omnia-medkit-latest-$FLAVOR.tar.gz
+	# Preserve the uncompressed image too
+	mv build_dir/target-arm_*/root-mvebu* bin/mvebu-musl/root
+	pushd bin/mvebu-musl/root
+	rm var
+	find -type l ! -exec test -r {} \; -delete
+	popd
+fi
+
+# Clean
+[ -d ./bin-nand ] && rm -rf ./bin-nand
+mv ./bin ./bin-nand
+[ -d ./tmp ] && rm -rf ./tmp
+
+# Generate lists
+PUB_BIN_DIR="`ls -1d bin-nand/* | head -n1`"
+mkdir -p $PUB_BIN_DIR/lists
+
+# On Omnia full build generate a minimal image as well and use it for base list
+if [ -n "$BUILD_ALL" ] && [ "$TARGET_BOARD" = omnia ]; then
+	make dirclean
+	cat configs/common configs/$TARGET_BOARD | sed -e "s|@BOARD@|$TARGET_BOARD|" -e "s|@BRANCH@|$PKG_BRANCH|" > .config
+	echo CONFIG_ALL_KMODS=y >> .config
+	cat "lists/base.list" "lists/base.${TARGET_BOARD}" | sed 's|#.*||' 2> /dev/null | while read PKG; do
+		if expr "$PKG" : CONFIG_;then
+			echo "$PKG" >> .config
+		elif [ -n "$PKG" ]; then
+			echo "CONFIG_PACKAGE_$PKG=y" >> .config
+		fi
+	done
+	make_defconfig
+	make "$@" PKG_BRANCH=${PKG_BRANCH/-/}
+	mv bin/mvebu-musl/openwrt-mvebu-Turris-Omnia-rootfs.tar.gz bin-nand/mvebu-musl/medkit/omnia-medkit-`date -d "$COMMIT_DATE" +%Y%m%d%H%M`-minimal.tar.gz
+	OPKG_STATUS="`ls -1d build_dir/target-arm_*/root-mvebu*/usr/lib/opkg/status`"
+	ln -s omnia-medkit-`date -d "$COMMIT_DATE" +%Y%m%d%H%M`-minimal.tar.gz bin-nand/mvebu-musl/medkit/omnia-medkit-latest-minimal.tar.gz
+else
+	OPKG_STATUS="`ls -1d bin-nand/*/root/usr/lib/opkg/status`"
+fi
+
+echo Install $(sed -n 's|Package: \(.*\)|"\1"|p' $OPKG_STATUS | egrep -v '"updater(|-deps|-consolidator)"') " { critical = true }" >> base.lua
+[ \! -f "lists/base_add" ]               || echo Install $(cat "lists/base_add.$TARGET_BOARD" | sed 's|^\([^#]\+\)$|"\1"|') " { critical = true }" >> base.lua
+[ \! -f "lists/base_add.$TARGET_BOARD" ] || echo Install $(cat "lists/base_add.$TARGET_BOARD" | sed 's|^\([^#]\+\)$|"\1"|') " { critical = true }" >> base.lua
+mv base.lua $PUB_BIN_DIR/lists
+# Generate packages that block each other, based on their file collisions
+# For some reason, mktemp -d doesn't work with TMPDIR set, so avoid that here.
+TMPDIR= ./scripts/negative_deps.pl $PUB_BIN_DIR >>$PUB_BIN_DIR/lists/base.lua
+echo '-- Install everything that was in the image' >>$PUB_BIN_DIR/lists/base.lua
+for i in lists/*.list; do
+	LUA="$(basename $i .list).lua"
+	[ "$i" = lists/base.list ] || echo 'if features and features.provides then' > $PUB_BIN_DIR/lists/"$LUA"
+	echo -n "  Install" >> $PUB_BIN_DIR/lists/"$LUA"
+	grep -h -v CONFIG_ "$i" "${i/%list/${TARGET_BOARD}}" 2> /dev/null | grep . | grep -v '^#' | while read pkg; do
+		echo -n " \"$pkg\"" >> $PUB_BIN_DIR/lists/"$LUA"
+	done
+	echo " { ignore = { 'missing' } }" >> $PUB_BIN_DIR/lists/"$LUA"
+	sed -i '/^  Install[[:blank:]]*$/ d' $PUB_BIN_DIR/lists/"$LUA"
+	[ "$i" = lists/base.list ] || echo 'end' >> $PUB_BIN_DIR/lists/"$LUA"
+	if [ -f "$HOME"/mime.key ]; then
+		staging_dir/host/bin/usign -S -m $PUB_BIN_DIR/lists/"$LUA" -s "$HOME"/mime.key
+	fi
+done
+for i in lists/*.lua; do
+	if [ -r "$i" ]; then
+		cp $i $PUB_BIN_DIR/lists
+		if [ -f "$HOME"/mime.key ]; then
+			staging_dir/host/bin/usign -S -m $PUB_BIN_DIR/lists/$(basename $i) -s "$HOME"/mime.key
+		fi
+	fi
+done
+if [ "$TARGET_BOARD" = "omnia" ]; then
+	rm -f $PUB_BIN_DIR/*.ext4 $PUB_BIN_DIR/*sums
+	for i in $PUB_BIN_DIR/medkit/*.tar.gz; do
+		if [ -f "$HOME"/mime.key ]; then
+			staging_dir/host/bin/usign -S -m "$i" -s "$HOME"/mime.key
+		fi
+		pushd "`dirname $i`"
+		md5sum "`basename $i`" > "`basename $i`".md5
+		sha256sum "`basename $i`" > "`basename $i`".sha256
+		popd
+	done
+fi
+
+if [ "$TARGET_BOARD" = turris ]; then
+	# Build NOR FW
+	cp configs/config-turris-nor .config
+	[ -n "$USE_CCACHE" ] && echo "CONFIG_CCACHE=y" >> .config
+	make defconfig
+	make clean
+	make "$@"
+	[ \! -d ./logs ] || mv ./logs ./logs-nor
+	[ -d ./bin/mpc85xx/packages ] && rm -rf ./bin/mpc85xx/packages
+	[ -d ./bin-nor ] && rm -rf ./bin-nor
+	mv ./bin ./bin-nor
+
+elif [ "$TARGET_BOARD" = omnia ]; then
+	cp configs/config-omnia-rescue .config
+	[ -n "$USE_CCACHE" ] && echo "CONFIG_CCACHE=y" >> .config
+    # Ugly hack, make python compile first to avoid possible race
+    ./scripts/feeds uninstall python
+	make defconfig CONFDEFAULT=n
+	make clean
+	make "$@"
+	echo -e "CONFIG_TARGET_ROOTFS_INITRAMFS=y\nCONFIG_TARGET_INITRAMFS_COMPRESSION_XZ=y" >> .config
+	sed -i 's/^TARGET_ROOTFS_INCLUDE_KERNEL=.*/# TARGET_ROOTFS_INCLUDE_KERNEL is not set/' .config
+	sed -i 's/^CONFIG_TARGET_ROOTFS_INCLUDE_DTB.*/# CONFIG_TARGET_ROOTFS_INCLUDE_DTB is not set/' .config
+	make defconfig
+	cp build_dir/target-arm_cortex-a9+vfpv3_musl-*_eabi/root-mvebu/boot/uboot* build_dir
+	rm -f build_dir/target-arm_cortex-a9+vfpv3_musl-*_eabi/root-mvebu/boot/* build_dir/target-arm_cortex-a9+vfpv3_musl-*_eabi/root-mvebu/etc/rc.d/*rainbow
+	make target/linux/compile "$@"
+	cp `ls -d build_dir/target-arm_cortex-a9+vfpv3_musl-*_eabi/linux-mvebu`/{zImage-initramfs,zImage-initramfs-armada-385-turris-omnia}
+	cat build_dir/target-arm_cortex-a9+vfpv3_musl-*_eabi/linux-mvebu/linux-4.4*/arch/arm/boot/dts/armada-385-turris-omnia.dtb >> `ls -d build_dir/target-arm_cortex-a9+vfpv3_musl-*_eabi/linux-mvebu`/zImage-initramfs-armada-385-turris-omnia
+	[ \! -d ./logs ] || mv ./logs ./logs-initram
+	cp build_dir/target-arm_*/linux-mvebu/zImage-initramfs-armada-385-turris-omnia bin/mvebu-musl/omnia-initramfs-zimage
+	SIZE="`du -b bin/mvebu-musl/omnia-initramfs-zimage | sed 's|[[:blank:]].*||'`"
+	echo "Rescue image size is ${SIZE}."
+	if [ "$SIZE" -ge $(( 7 * 1024 * 1024 )) ]; then
+		echo FATAL: Image too big.
+		exit 1
+	fi
+	mv build_dir/uboot* bin/mvebu-musl
+	mkdir -p bin/mvebu-musl/x86-64
+	cp build_dir/host/uboot-turris-omnia*/turris-omnia-uboot/* bin/mvebu-musl/x86-64
+	mv bin bin-nor
+	rm -rf bin-nor/mvebu-musl/packages
+fi
