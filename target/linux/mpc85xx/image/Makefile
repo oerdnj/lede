@@ -21,7 +21,7 @@ endef
 
 zImage:=$(BIN_DIR)/$(IMG_PREFIX)-zImage
 
-DTS_TARGETS = fsl/p1010rdb-pa tl-wdr4900-v1 fsl/p1020rdb
+DTS_TARGETS = fsl/p1010rdb-pa tl-wdr4900-v1 turris-nand-bch turris-nand-hw fsl/p1020rdb
 
 define Image/BuildKernel
 	cp $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage

@@ -6,7 +6,14 @@
 . /lib/mpc85xx.sh
 
 mpc85xx_set_preinit_iface() {
-	ifname=eth0
+	case $(mpc85xx_board_name) in
+		rtrs01|rtrs02)
+			ifname=eth2
+			;;
+		*)
+			ifname=eth0
+			;;
+	esac
 }
 
 boot_hook_add preinit_main mpc85xx_set_preinit_iface
