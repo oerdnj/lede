@@ -8,11 +8,8 @@ Subject: [PATCH] Add missing headers
  1 file changed, 13 insertions(+)
  create mode 100644 libs/alsa-lib/patches/010-alsa-lib-includes.patch
 
-diff --git a/libs/alsa-lib/patches/010-alsa-lib-includes.patch b/libs/alsa-lib/patches/010-alsa-lib-includes.patch
-new file mode 100644
-index 0000000..aa69718
 --- /dev/null
-+++ b/libs/alsa-lib/patches/010-alsa-lib-includes.patch
++++ packages/libs/alsa-lib/patches/010-alsa-lib-includes.patch
 @@ -0,0 +1,13 @@
 +--- a/src/topology/parser.c
 ++++ b/src/topology/parser.c
@@ -27,6 +24,3 @@ index 0000000..aa69718
 + /*
 +  * Parse compound
 +  */
--- 
-2.9.2
-

@@ -1,7 +1,5 @@
-diff --git a/libs/dahdi-tools/Makefile b/libs/dahdi-tools/Makefile
-index 572894b..b824413 100644
---- a/libs/dahdi-tools/Makefile
-+++ b/libs/dahdi-tools/Makefile
+--- telephony.orig/libs/dahdi-tools/Makefile
++++ telephony/libs/dahdi-tools/Makefile
 @@ -35,6 +35,7 @@ define Package/dahdi-cfg
  endef
  

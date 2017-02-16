@@ -8,11 +8,8 @@ Subject: [PATCH] memcached: Add missing includes
  1 file changed, 11 insertions(+)
  create mode 100644 net/memcached/patches/add-missing-includes.patch
 
-diff --git a/net/memcached/patches/add-missing-includes.patch b/net/memcached/patches/add-missing-includes.patch
-new file mode 100644
-index 0000000..43b97a0
 --- /dev/null
-+++ b/net/memcached/patches/add-missing-includes.patch
++++ packages/net/memcached/patches/add-missing-includes.patch
 @@ -0,0 +1,11 @@
 +--- a/logger.c
 ++++ b/logger.c
@@ -25,6 +22,3 @@ index 0000000..43b97a0
 + 
 + #include "memcached.h"
 + #include "bipbuffer.h"
--- 
-2.10.0
-

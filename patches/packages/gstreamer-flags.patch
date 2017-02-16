@@ -1,8 +1,6 @@
-diff --git a/multimedia/gstreamer1/Makefile b/multimedia/gstreamer1/Makefile
-index cf11d9d..44506f9 100644
---- a/multimedia/gstreamer1/Makefile
-+++ b/multimedia/gstreamer1/Makefile
-@@ -29,6 +29,8 @@ PKG_INSTALL:=1
+--- packages.orig/multimedia/gstreamer1/Makefile
++++ packages/multimedia/gstreamer1/Makefile
+@@ -30,6 +30,8 @@ PKG_INSTALL:=1
  include $(INCLUDE_DIR)/package.mk
  include $(INCLUDE_DIR)/nls.mk
  
@@ -11,7 +9,7 @@ index cf11d9d..44506f9 100644
  define Package/gstreamer1/Default
    CATEGORY:=Multimedia
    SECTION:=multimedia
-@@ -102,7 +104,7 @@ endef
+@@ -103,7 +105,7 @@ endef
  define Package/libgstreamer1
    $(call Package/gstreamer1/Default)
    TITLE+= library (core)
@@ -20,11 +18,8 @@ index cf11d9d..44506f9 100644
    HIDDEN:=1
  endef
  
-diff --git a/multimedia/gstreamer1/patches/020-gstplugin-have-strsignal.patch b/multimedia/gstreamer1/patches/020-gstplugin-have-strsignal.patch
-new file mode 100644
-index 0000000..17352ab
 --- /dev/null
-+++ b/multimedia/gstreamer1/patches/020-gstplugin-have-strsignal.patch
++++ packages/multimedia/gstreamer1/patches/020-gstplugin-have-strsignal.patch
 @@ -0,0 +1,13 @@
 +--- a/libs/gst/check/libcheck/libcompat.h
 ++++ b/libs/gst/check/libcheck/libcompat.h

@@ -1,8 +1,6 @@
-diff --git a/lang/ruby/Makefile b/lang/ruby/Makefile
-index 20bfaa3..a08a512 100644
---- a/lang/ruby/Makefile
-+++ b/lang/ruby/Makefile
-@@ -625,6 +625,22 @@ endef
+--- packages.orig/lang/ruby/Makefile
++++ packages/lang/ruby/Makefile
+@@ -627,6 +627,22 @@ endef
  RUBY_FILES = $(strip $(call Package/ruby-$(1)/files))
  RUBY_FILES_EXCLUDED = $(strip $(call Package/ruby-$(1)/files-excluded))
  

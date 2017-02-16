@@ -1,7 +1,5 @@
-diff --git a/libs/giflib/Makefile b/libs/giflib/Makefile
-index 28fcd69..75573bb 100644
---- a/libs/giflib/Makefile
-+++ b/libs/giflib/Makefile
+--- packages.orig/libs/giflib/Makefile
++++ packages/libs/giflib/Makefile
 @@ -8,12 +8,12 @@
  include $(TOPDIR)/rules.mk
  

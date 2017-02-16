@@ -8,11 +8,8 @@ Subject: [PATCH] lcd4linux: Add missing includes
  1 file changed, 10 insertions(+)
  create mode 100644 utils/lcd4linux/patches/174-add-missing-includes.patch
 
-diff --git a/utils/lcd4linux/patches/174-add-missing-includes.patch b/utils/lcd4linux/patches/174-add-missing-includes.patch
-new file mode 100644
-index 0000000..024babe
 --- /dev/null
-+++ b/utils/lcd4linux/patches/174-add-missing-includes.patch
++++ packages/utils/lcd4linux/patches/174-add-missing-includes.patch
 @@ -0,0 +1,10 @@
 +--- a/plugin_i2c_sensors.c
 ++++ b/plugin_i2c_sensors.c
@@ -24,6 +21,3 @@ index 0000000..024babe
 + 
 + #include "debug.h"
 + #include "plugin.h"
--- 
-2.10.0
-

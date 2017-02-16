@@ -1,8 +1,6 @@
-diff --git a/libs/libmicrohttpd/Makefile b/libs/libmicrohttpd/Makefile
-index 09eca22..ec1a9ef 100644
---- a/libs/libmicrohttpd/Makefile
-+++ b/libs/libmicrohttpd/Makefile
-@@ -73,6 +73,8 @@ CONFIGURE_ARGS += \
+--- packages.orig/libs/libmicrohttpd/Makefile
++++ packages/libs/libmicrohttpd/Makefile
+@@ -72,6 +72,8 @@ CONFIGURE_ARGS += \
  	--with-gnutls
  endif
  

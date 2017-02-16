@@ -3,10 +3,7 @@ From: Michal Hrusecky <michal.hrusecky@nic.cz>
 Date: Thu, 9 Jun 2016 10:38:25 +0200
 Subject: [PATCH] Drop obsolete patch
 
-diff --git a/lang/tcl/patches/100-disable_tzdata_and_msgs_install.patch b/lang/tcl/patches/100-disable_tzdata_and_msgs_install.patch
-deleted file mode 100644
-index 1db8f07..0000000
---- a/lang/tcl/patches/100-disable_tzdata_and_msgs_install.patch
+--- packages.orig/lang/tcl/patches/100-disable_tzdata_and_msgs_install.patch
 +++ /dev/null
 @@ -1,22 +0,0 @@
 ---- a/unix/Makefile.in
@@ -31,10 +28,7 @@ index 1db8f07..0000000
 - 
 - install-doc: doc
 - 	@for i in "$(MAN_INSTALL_DIR)" "$(MAN1_INSTALL_DIR)" "$(MAN3_INSTALL_DIR)" "$(MANN_INSTALL_DIR)" ; \
-diff --git a/lang/tcl/patches/200-fix_mips_build.patch b/lang/tcl/patches/200-fix_mips_build.patch
-deleted file mode 100644
-index 48485ca..0000000
---- a/lang/tcl/patches/200-fix_mips_build.patch
+--- packages.orig/lang/tcl/patches/200-fix_mips_build.patch
 +++ /dev/null
 @@ -1,20 +0,0 @@
 ---- a/generic/tclStrToD.c
@@ -57,6 +51,3 @@ index 48485ca..0000000
 -     union fpc_csr mipsCR;
 - 
 -     mipsCR.fc_word = get_fpc_csr();
--- 
-2.8.3
-

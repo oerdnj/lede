@@ -1,7 +1,5 @@
-diff --git a/libs/libv4l/Makefile b/libs/libv4l/Makefile
-index b6fda69..b82fe3b 100644
---- a/libs/libv4l/Makefile
-+++ b/libs/libv4l/Makefile
+--- packages.orig/libs/libv4l/Makefile
++++ packages/libs/libv4l/Makefile
 @@ -76,7 +76,7 @@ define Package/v4l-utils/description
    This package contains the video4linux utilities.
  endef
@@ -11,10 +9,8 @@ index b6fda69..b82fe3b 100644
  TARGET_LDFLAGS += -largp
  
  CONFIGURE_ARGS+= \
-diff --git a/libs/libv4l/patches/020-add-missing-includes.patch b/libs/libv4l/patches/020-add-missing-includes.patch
-index 34e0511..46fa058 100644
---- a/libs/libv4l/patches/020-add-missing-includes.patch
-+++ b/libs/libv4l/patches/020-add-missing-includes.patch
+--- packages.orig/libs/libv4l/patches/020-add-missing-includes.patch
++++ packages/libs/libv4l/patches/020-add-missing-includes.patch
 @@ -26,3 +26,79 @@
   
   #include "v4l2-ctl.h"

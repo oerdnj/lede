@@ -37,17 +37,13 @@ make_defconfig() {
 ./scripts/feeds clean
 ./scripts/feeds update -a
 # Patch feeds
-pushd patches
-for feed in *; do
-	pushd $feed
-	for patch in *; do
-		pushd ../../feeds/$feed
-		patch -p1 < ../../patches/$feed/$patch
+for feed in $(./scripts/feeds list -n); do
+	if [ -d "patches/$feed" ]; then
+		pushd feeds/$feed
+		QUILT_PATCHES=../../patches/$feed quilt push -a
 		popd
-	done
-	popd
+	fi
 done
-popd
 ./scripts/feeds install -a
 
 # Uninstall broken pkgs

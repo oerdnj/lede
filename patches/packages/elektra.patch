@@ -1,7 +1,5 @@
-diff --git a/libs/elektra/Makefile b/libs/elektra/Makefile
-index 60b84c5..82d7193 100644
---- a/libs/elektra/Makefile
-+++ b/libs/elektra/Makefile
+--- packages.orig/libs/elektra/Makefile
++++ packages/libs/elektra/Makefile
 @@ -93,7 +93,7 @@ endef
  define Package/libelektra-plugins
    $(call Package/libelektra/Default)

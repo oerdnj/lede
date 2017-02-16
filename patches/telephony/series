@@ -1,0 +1,3 @@
+asterisk.patch
+baresip.patch
+dahdi-tools-pthread-dependency.patch

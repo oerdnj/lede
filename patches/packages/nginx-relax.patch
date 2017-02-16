@@ -8,11 +8,8 @@ Subject: [PATCH] nginx: Relax checks - disable -Werror
  1 file changed, 16 insertions(+)
  create mode 100644 net/nginx/patches/400-relax.patch
 
-diff --git a/net/nginx/patches/400-relax.patch b/net/nginx/patches/400-relax.patch
-new file mode 100644
-index 00000000..acceee31
 --- /dev/null
-+++ b/net/nginx/patches/400-relax.patch
++++ packages/net/nginx/patches/400-relax.patch
 @@ -0,0 +1,16 @@
 +--- a/auto/cc/gcc
 ++++ b/auto/cc/gcc
@@ -30,6 +27,3 @@ index 00000000..acceee31
 + # DragonFly's gcc3 generates DWARF
 + #CFLAGS="$CFLAGS -g -gstabs"
 + 
--- 
-2.11.0
-

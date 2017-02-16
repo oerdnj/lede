@@ -1,7 +1,5 @@
-diff --git a/net/baresip/Makefile b/net/baresip/Makefile
-index ed070f1..6a5c3dd 100644
---- a/net/baresip/Makefile
-+++ b/net/baresip/Makefile
+--- telephony.orig/net/baresip/Makefile
++++ telephony/net/baresip/Makefile
 @@ -141,8 +141,8 @@ endef
  $(eval $(call BuildPackage,baresip))
  

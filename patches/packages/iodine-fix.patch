@@ -1,7 +1,5 @@
-diff --git a/net/iodine/patches/100-musl-compatibility.patch b/net/iodine/patches/100-musl-compatibility.patch
-index 17ddc04..ef55c3c 100644
---- a/net/iodine/patches/100-musl-compatibility.patch
-+++ b/net/iodine/patches/100-musl-compatibility.patch
+--- packages.orig/net/iodine/patches/100-musl-compatibility.patch
++++ packages/net/iodine/patches/100-musl-compatibility.patch
 @@ -20,7 +20,7 @@ index 2715979..5f0e370 100644
   
   /* daemon(3) exists only in 4.4BSD or later, and in GNU libc */
