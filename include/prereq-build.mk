@@ -151,6 +151,9 @@ $(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))
 
+$(eval $(call SetupHostCommand,quilt,Please install the 'quilt' package, \
+	quilt --version | grep -E "[0-9]\\.[0-9]*"))
+
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
 	$(CC) -O2 -I$(TOPDIR)/tools/include -o $@ $<
